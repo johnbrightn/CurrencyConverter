@@ -1,6 +1,12 @@
 package com.jbntech.currencyconv.dto;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+import org.jetbrains.annotations.NotNull;
+
 public class Currency {
+
     String currencyName;
     String currencyShort;
 

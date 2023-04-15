@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -18,9 +17,10 @@ import android.widget.Toast;
 
 import com.jbntech.currencyconv.adapter.CurrencyListAdapter;
 import com.jbntech.currencyconv.dto.ConverterRateResponse;
-import com.jbntech.currencyconv.dto.Currencies;
 import com.jbntech.currencyconv.dto.Currency;
-import com.jbntech.currencyconv.dto.CurrencyRate;
+import com.jbntech.currencyconv.util.SessionManager;
+
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,19 +47,34 @@ public class MainActivity extends AppCompatActivity {
 
     private ConverterRateResponse _converterRateResponse;
 
+    private SessionManager sessionManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sessionManager = new SessionManager(this);
 
         //init view model
         viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+
         initGetCurrenciesLiveData();
         initGetCurrencyRatesLiveData();
         initExchangeRateCalculator();
 
-        viewModel.getCurrencies();
-        viewModel.getCurrentRates();
+        sessionManager.setRemoteQueried(false);
+        if(!sessionManager.isRemoteQueried()){
+            viewModel.getRemoteCurrencies(getApplicationContext());
+            viewModel.getRemoteCurrencyRates(getApplicationContext());
+            sessionManager.setRemoteQueried(true);
+        }
+
+        try {
+            viewModel.getCurrencies(getApplicationContext());
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        viewModel.getCurrentRates(getApplicationContext());
 
         //init buttons and edittexts
         buttonFirstCurrency = findViewById(R.id.buttonFirstCurrency);
@@ -160,13 +175,17 @@ public class MainActivity extends AppCompatActivity {
                 selectedFirstCurrency = currencyName;
                 selectedFirstCurrencyCode = currencyShort;
                 buttonFirstCurrency.setText(selectedFirstCurrency + " " + selectedFirstCurrencyCode);
+
                 selectedFirstCurrencyRate = _converterRateResponse.getRates().get(selectedFirstCurrencyCode).getAsDouble();
+
             }
             if (selectCurrencyButton == SELECT_CURRENCY_BUTTON_TWO) {
                 selectedSecondCurrency = currencyName;
                 selectedSecondCurrencyCode = currencyShort;
                 buttonSecondCurrency.setText(selectedSecondCurrency + " " + selectedSecondCurrencyCode);
-                selectedSecondCurrencyRate = _converterRateResponse.getRates().get(selectedSecondCurrencyCode).getAsDouble();
+
+                    selectedSecondCurrencyRate = _converterRateResponse.getRates().get(selectedSecondCurrencyCode).getAsDouble();
+
             }
             dialog.dismiss();
         });
