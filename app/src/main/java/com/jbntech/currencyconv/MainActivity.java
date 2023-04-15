@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -22,7 +23,12 @@ import com.jbntech.currencyconv.util.SessionManager;
 
 import org.json.JSONException;
 
+import java.sql.SQLOutput;
+import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -62,11 +68,12 @@ public class MainActivity extends AppCompatActivity {
         initGetCurrencyRatesLiveData();
         initExchangeRateCalculator();
 
-        sessionManager.setRemoteQueried(false);
-        if(!sessionManager.isRemoteQueried()){
+        //if remotequeried is false and
+        if (!remoteQueriedDateIsToday(sessionManager)) {
+            System.out.println("this is run");
             viewModel.getRemoteCurrencies(getApplicationContext());
             viewModel.getRemoteCurrencyRates(getApplicationContext());
-            sessionManager.setRemoteQueried(true);
+            sessionManager.setRemoteQueriedDate(getTodaysDate());
         }
 
         try {
@@ -87,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         buttonSecondCurrency.setOnClickListener(view -> {
-                    showSelectCurrencyModal(SELECT_CURRENCY_BUTTON_TWO);
+            showSelectCurrencyModal(SELECT_CURRENCY_BUTTON_TWO);
         });
 
 
@@ -128,10 +135,41 @@ public class MainActivity extends AppCompatActivity {
 //       });
 
 
-
-
     }
 
+    private String getTodaysDate(){
+        String today = "";
+        try {
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            today =  sdf.format(date);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        return today;
+    }
+
+    private boolean remoteQueriedDateIsToday(SessionManager sm){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date queriedDate = sdf.parse(sm.getRemoteQueriedDate());
+            Date todayDate = sdf.parse(getTodaysDate());
+            System.out.println("QUERY_DATE: "+queriedDate+" TODAY: "+todayDate);
+            assert queriedDate != null;
+            int dates = queriedDate.compareTo(todayDate);
+            Log.d("DIFF", Integer.toString(dates));
+//            if(queriedDate.before(todayDate)){
+//                return false;
+//            }
+            if(dates == 0){
+                return true;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     private void initGetCurrenciesLiveData() {
         viewModel.currenciesLiveData.observe(this, currencies -> {
@@ -184,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
                 selectedSecondCurrencyCode = currencyShort;
                 buttonSecondCurrency.setText(selectedSecondCurrency + " " + selectedSecondCurrencyCode);
 
-                    selectedSecondCurrencyRate = _converterRateResponse.getRates().get(selectedSecondCurrencyCode).getAsDouble();
+                selectedSecondCurrencyRate = _converterRateResponse.getRates().get(selectedSecondCurrencyCode).getAsDouble();
 
             }
             dialog.dismiss();

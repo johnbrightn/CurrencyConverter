@@ -21,6 +21,7 @@ public class SessionManager {
     private static final String PREF_NAME = "CurrencyConverterPref";
 
     private static final String KEY_IS_REMOTE_QUERIED = "isRemoteQueried";
+    private static final String KEY_REMOTE_QUERIED_DATE = "remoteQueiriedDate";
 
     public SessionManager(Context context){
         this._context = context;
@@ -38,6 +39,14 @@ public class SessionManager {
         return pref.getBoolean(KEY_IS_REMOTE_QUERIED, false);
     }
 
+    public void setRemoteQueriedDate(String remoteQueriedDate){
+        editor.putString(KEY_REMOTE_QUERIED_DATE, remoteQueriedDate);
+        editor.commit();
+    }
+
+    public String getRemoteQueriedDate(){
+        return pref.getString(KEY_REMOTE_QUERIED_DATE, "2020-01-01");
+    }
 
 
 }
